@@ -82,11 +82,11 @@ rm /tmp/generatedList -f
 
 echo -e "\e[0;32mSearching for stuff online...\e[m"
 
-curl 'https://www.pkey.in/tools-i/search-subdomains' -H 'User-Agent: Mozilla/5.0 (Mobile; rv:49.0) Gecko/49.0 Firefox/49.0' --data "zone=$target&submit=" --insecure | grep "border-left-style: none;" | cut -d '>' -f2 | cut -d '<' -f1 | grep -F . | uniq | sed 's/\.$//' | grep "$target" > /tmp/onlineFoundSubdomains
+curl https://www.pkey.in/tools-i/search-subdomains -H 'User-Agent: Mozilla/5.0 (Mobile; rv:49.0) Gecko/49.0 Firefox/49.0' --data "zone=$target&submit=" --insecure | grep "border-left-style: none;" | cut -d '>' -f2 | cut -d '<' -f1 | grep -F . | uniq | sed 's/\.$//' | grep "$target" > /tmp/onlineFoundSubdomains
 
-curl 'http://api.hackertarget.com/hostsearch/?q=$target' | sed 's/,/ /' | awk '{print $1}' | grep "$target" >> /tmp/onlineFoundSubdomains
+curl http://api.hackertarget.com/hostsearch/?q=$target | sed 's/,/ /' | awk '{print $1}' | grep "$target" >> /tmp/onlineFoundSubdomains
 
-curl 'https://www.virustotal.com/en/domain/$target/information/' -H 'Host: www.virustotal.com' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' --compressed | grep information | grep "$target" | awk '{print $3}' | sed 's/\// /g' | awk '{print $4}' >> /tmp/onlineFoundSubdomains
+curl https://www.virustotal.com/en/domain/$target/information/ -H 'Host: www.virustotal.com' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' --compressed | grep information | grep "$target" | awk '{print $3}' | sed 's/\// /g' | awk '{print $4}' >> /tmp/onlineFoundSubdomains
 
 echo -e "\e[0;32m--------------Online Found Subdomains-------------------\e[m"
 
@@ -113,7 +113,7 @@ read -p "Would you like to check for new IPs (of the servers that hosts the subd
 	if [ -z "$newIp" ]; then
 		echo "I did not understand"	
 	elif [ "$newIp" == y ] || [ newIp == yes ]; then
-		newIp="$(echo "$bruteSubListFinal"| xargs -n 1 -P30 -I NEWIP sh -c " host 'NEWIP'" | awk '{print $4}')"
+		newIp="$(echo "$bruteSubListFinal"| xargs -n 1 -P30 -I NEWIP sh -c " host 'NEWIP'" | awk '{print $4}' | grep '\.')"
 	elif  [ "$newIp" == n ] || [ newIp == no ]; then
 		echo "Newly discovered IPs will not be analyzed"
 	else 
@@ -136,7 +136,7 @@ echo "choose what to analyze"
 echo " 1) target IP: $ip"
 echo " 2) target IP RANGE: $range"
 echo " 3) target IPs discovered by subdomains:"
-echo "$newIp" | sort
+echo "$newIp" | sort | uniq
 
 read -p "what would you like to analyze (1,2 or 3)?: " targetIp
 if [ "$targetIp" == "1" ]; then
