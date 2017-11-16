@@ -94,7 +94,6 @@ onlineSub=$(cat /tmp/onlineFoundSubdomains | sort | uniq)
 
 echo "$onlineSub"
 
-exit
 #bruteforce for subdomains
 
 echo -e "\e[0;32m--------------Dictionary attack start-------------------\e[m"
