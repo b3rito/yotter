@@ -2,7 +2,7 @@
 This bash script performs recon by:
 1) finding the targets IP
 2) finding the targets IP range
-3) checks online for subdomains ( pkey.in | dnsdumpster.com | virustotal.com )
+3) checks online for subdomains ( pkey.in | hackertarget.com | virustotal.com )
 4) bruteforces for subdomains ( around 250 checks per second )
 5) port scans all found IPs for HTTP* services ( around 500 ports per second )
 
