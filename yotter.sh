@@ -78,7 +78,7 @@ echo -e "\e[1;94mrange: $range \e[m"
 rm /tmp/onlineFoundSubdomains -f
 rm /tmp/generatedList -f
 
-#searching for subdomains DNS + small brute (pkey.in | dnsdumpster.com | virustotal.com)
+#searching for subdomains DNS + small brute (pkey.in | hackertarget.com | virustotal.com)
 
 echo -e "\e[0;32mSearching for stuff online...\e[m"
 
