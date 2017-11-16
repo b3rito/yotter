@@ -6,7 +6,7 @@ This bash script performs recon by:
 4) bruteforces for subdomains ( around 250 checks per second )
 5) port scans all found IPs for HTTP* services ( around 500 ports per second )
 
-and then uses dirb do discover direcories that might lead to information leakage (such as credentials found in server-status)
+and then uses dirb do discover directories that might lead to information leakage (such as credentials found in server-status)
 
 # Requirements
 netcat > https://en.wikipedia.org/wiki/Netcat
