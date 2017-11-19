@@ -34,10 +34,10 @@ Written by b3rito at mes3hacklab
      because otters are cute!                                     (by b3rito)                  
     ==========================================================================
     ==========================================================================
-    version: 1.0
+    version: 1.1
     credits: b3rito
     twitter/github: b3rito
     report bugs: b3rito@mes3hacklab.org
     update: ./yotter.sh -u
-    USAGE: ./yotter.sh -t example.com -d /path/to/dictionary 
+    USAGE: ./yotter.sh -t example.com -d /path/to/dictionary -s 1000(threads)
     ==========================================================================
