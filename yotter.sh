@@ -1,12 +1,15 @@
 #!/bin/bash
 
-while getopts ":t:d:u" opt; do
+while getopts ":t:d:s:u" opt; do
 	case $opt in
 		t)
 			target=$OPTARG   
 		;;
 		d)
 			dictionary=$OPTARG   
+		;;
+		s)
+			speed=$OPTARG 
 		;;
 		u)
 			echo "updating..."			
@@ -35,12 +38,12 @@ cat << "img"
 img
 echo -e "\e[1;94m==========================================================================\e[m"
 echo -e "=========================================================================="
-echo -e "version: 1.0"
+echo -e "version: 1.1"
 echo -e "credits: b3rito"
 echo -e "twitter/github: b3rito"
 echo -e "report bugs: b3rito@mes3hacklab.org"
 echo -e "update: ./yotter.sh -u"
-echo -e "\e[1;33mUSAGE: ./yotter.sh -t example.com -d /path/to/dictionary \e[m"
+echo -e "\e[1;33mUSAGE: ./yotter.sh -t example.com -d /path/to/dictionary -s 1000(threads)\e[m"
 echo -e "=========================================================================="
 
 if [ -z "$target" ]; then
@@ -63,6 +66,14 @@ if [ -z "$dictionary" ]; then
 		exit
 	fi
 fi
+if [ -z "$speed" ]; then
+	echo "insert THREADS (-s 1000)"
+	exit
+fi
+if [ "$speed" -lt 1 ]; then
+	echo "-.-"
+	exit
+fi
 
 ip=$(host $target | head -n 1 | awk '{print $4}')
 range=$(whois $ip | grep -E 'NetRange|inetnum' | awk '{print $2,$3,$4}')
@@ -82,11 +93,11 @@ rm /tmp/generatedList -f
 
 echo -e "\e[0;32mSearching for stuff online...\e[m"
 
-curl https://www.pkey.in/tools-i/search-subdomains -H 'User-Agent: Mozilla/5.0 (Mobile; rv:49.0) Gecko/49.0 Firefox/49.0' --data "zone=$target&submit=" --insecure | grep "border-left-style: none;" | cut -d '>' -f2 | cut -d '<' -f1 | grep -F . | uniq | sed 's/\.$//' | grep "$target" > /tmp/onlineFoundSubdomains
+curl https://www.pkey.in/tools-i/search-subdomains -H 'User-Agent: Mozilla/5.0 (Mobile; rv:49.0) Gecko/49.0 Firefox/49.0' --data "zone=$target&submit=" --insecure -m 30 | grep "border-left-style: none;" | cut -d '>' -f2 | cut -d '<' -f1 | grep -F . | uniq | sed 's/\.$//' | grep "$target" > /tmp/onlineFoundSubdomains
 
-curl http://api.hackertarget.com/hostsearch/?q=$target | sed 's/,/ /' | awk '{print $1}' | grep "$target" >> /tmp/onlineFoundSubdomains
+curl http://api.hackertarget.com/hostsearch/?q=$target -m 30 | sed 's/,/ /' | awk '{print $1}' | grep "$target" >> /tmp/onlineFoundSubdomains
 
-curl https://www.virustotal.com/en/domain/$target/information/ -H 'Host: www.virustotal.com' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' --compressed | grep information | grep "$target" | awk '{print $3}' | sed 's/\// /g' | awk '{print $4}' >> /tmp/onlineFoundSubdomains
+curl https://www.virustotal.com/en/domain/$target/information/ -H 'Host: www.virustotal.com' -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:45.0) Gecko/20100101 Firefox/45.0' -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8' -H 'Accept-Language: en-US,en;q=0.5' --compressed -m 30 | grep information | grep "$target" | awk '{print $3}' | sed 's/\// /g' | awk '{print $4}' >> /tmp/onlineFoundSubdomains
 
 echo -e "\e[0;32m--------------Online Found Subdomains-------------------\e[m"
 
@@ -134,8 +145,9 @@ echo "$combinedLists" | sort | uniq
 echo  -e "\e[1;94m-------------------Port scan-------------------\e[m"
 echo "choose what to analyze"
 echo " 1) target IP: $ip"
-echo " 2) target IP RANGE: $range"
-echo " 3) target IPs discovered by subdomains:"
+echo " 2) set target IP manually "
+echo " 3) target IP RANGE: $range"
+echo " 4) target IPs discovered by subdomains:"
 echo "$newIp" | sort | uniq
 
 read -p "what would you like to analyze (1,2 or 3)?: " targetIp
@@ -149,10 +161,24 @@ if [ "$targetIp" == "1" ]; then
 #scanning ports + multithread [ magic - scanning 65535 ports in 2 minutes ;) ]
 	
 	echo "----------scanning 65535 ports for WebApps----------"
-	ncScan="$(echo "$ipPlusPortList" | xargs -n 1 -P1000 -I LIST sh -c "nc -zv -w 1 LIST 2>&1 | grep open | grep 'http*'")"
+	ncScan="$(echo "$ipPlusPortList" | xargs -n 1 -P $speed -I LIST sh -c "nc -zv -w 1 LIST 2>&1 | grep open | grep 'http*'")"
 	validIpPortList="$(echo "$ncScan" | awk '{print $2,$3}' | cut -d '[' -f2 | sed 's/]/:/g' | sed 's/ //g')"
 	echo "$validIpPortList"
+
 elif [ "$targetIp" == "2" ]; then
+	read -p "please enter target IP: " customIp
+#creating target + port list
+	
+	ipPlusPortList="$(for p in {1..65535}; do echo "$customIp $p"; done)"
+	
+#scanning ports + multithread [ magic - scanning 65535 ports in 2 minutes ;) ]
+	
+	echo "----------scanning 65535 ports for WebApps----------"
+	ncScan="$(echo "$ipPlusPortList" | xargs -n 1 -P $speed -I LIST sh -c "nc -zv -w 1 LIST 2>&1 | grep open | grep 'http*'")"
+	validIpPortList="$(echo "$ncScan" | awk '{print $2,$3}' | cut -d '[' -f2 | sed 's/]/:/g' | sed 's/ //g')"
+	echo "$validIpPortList"
+
+elif [ "$targetIp" == "3" ]; then
 	echo "analyzing $range"
 
 # creating target list
@@ -175,11 +201,11 @@ elif [ "$targetIp" == "2" ]; then
 
 #scanning ports + multithread [ magic - scanning 65535 ports in 2 minutes ;) ]
 	
-	ncScan="$(echo "$rangeIpPlusPortList" | xargs -n 1 -P1000 -I LIST sh -c "nc -zv -w 1 LIST 2>&1 | grep open | grep 'http*'")"
+	ncScan="$(echo "$rangeIpPlusPortList" | xargs -n 1 -P $speed -I LIST sh -c "nc -zv -w 1 LIST 2>&1 | grep open | grep 'http*'")"
 	validIpPortList="$(echo "$ncScan" | awk '{print $2,$3}' | cut -d '[' -f2 | sed 's/]/:/g' | sed 's/ //g')"
 	echo "$validIpPortList"
 
-elif [ "$targetIp" == "3" ]; then
+elif [ "$targetIp" == "4" ]; then
 	echo "analyzing..."
 
 
@@ -193,7 +219,7 @@ elif [ "$targetIp" == "3" ]; then
 
 #scanning ports + multithread [ magic - scanning 65535 ports in 2 minutes ;) ]
 	
-	ncSubScan="$(echo "$subIpPlusPortList" | xargs -n 1 -P1000 -I LIST sh -c "nc -zv -w 1 LIST 2>&1 | grep open | grep 'http*'")"
+	ncSubScan="$(echo "$subIpPlusPortList" | xargs -n 1 -P $speed -I LIST sh -c "nc -zv -w 1 LIST 2>&1 | grep open | grep 'http*'")"
 	validSubIpPortList="$(echo "$ncSubScan" | awk '{print $2,$3}' | cut -d '[' -f2 | sed 's/]/:/g' | sed 's/ //g')"	
 	echo "$validSubIpPortList"
 
