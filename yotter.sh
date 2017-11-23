@@ -150,7 +150,7 @@ echo " 3) target IP RANGE: $range"
 echo " 4) target IPs discovered by subdomains:"
 echo "$newIp" | sort | uniq
 
-read -p "what would you like to analyze (1,2 or 3)?: " targetIp
+read -p "what would you like to analyze (1,2,3 or 4)?: " targetIp
 if [ "$targetIp" == "1" ]; then
 	echo "analyzing $ip"
 
