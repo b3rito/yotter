@@ -34,7 +34,7 @@ Written by b3rito at mes3hacklab
      because otters are cute!                                     (by b3rito)                  
     ==========================================================================
     ==========================================================================
-    version: 1.1
+    version: 1.2
     credits: b3rito
     twitter/github: b3rito
     report bugs: b3rito@mes3hacklab.org
