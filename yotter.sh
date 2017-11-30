@@ -38,7 +38,7 @@ cat << "img"
 img
 echo -e "\e[1;94m==========================================================================\e[m"
 echo -e "=========================================================================="
-echo -e "version: 1.1"
+echo -e "version: 1.2"
 echo -e "credits: b3rito"
 echo -e "twitter/github: b3rito"
 echo -e "report bugs: b3rito@mes3hacklab.org"
@@ -105,34 +105,43 @@ onlineSub=$(cat /tmp/onlineFoundSubdomains | sort | uniq)
 
 echo "$onlineSub"
 
+echo -e "\e[0;32m--------------Dictionary attack start-------------------\e[m"
+#checking for DNS wildcard
+randomString="$(od -vAn -N4 -tx < /dev/urandom)"
+randomStringCheck="$(host $randomString.$target | awk '{print $3}')"
+
+if [ "$randomStringCheck" != "not" ]; then
+	echo -e "\e[0;31mDNS wildcard detected!\e[m"
+	echo "will not bruteforce"
+else
 #bruteforce for subdomains
 
-echo -e "\e[0;32m--------------Dictionary attack start-------------------\e[m"
-
-while read wl; do 
-	generateSubList="$(echo "$wl.$target")"
-	echo "$generateSubList" | grep "$target" >> /tmp/generatedList
-done <"$dictionary" 
+	while read wl; do 
+		generateSubList="$(echo "$wl.$target")"
+		echo "$generateSubList" | grep "$target" >> /tmp/generatedList
+	done <"$dictionary" 
 
 # multithread [ magic - 1600 attempts in 6 seconds ;) ]
 
-bruteSub=$(</tmp/generatedList)
-bruteSubList="$(echo "$bruteSub" | xargs -n 1 -P30 -I LINK sh -c " host 'LINK' | grep "address" | grep '$target'")" 
-bruteSubListFinal="$(echo "$bruteSubList" | awk '{print $1}' | sort | uniq )"
-echo "$bruteSubListFinal"
-read -p "Would you like to check for new IPs (of the servers that hosts the subdomains)? (y/n): " newIp
-	if [ -z "$newIp" ]; then
-		echo "I did not understand"	
-	elif [ "$newIp" == y ] || [ newIp == yes ]; then
-		newIp="$(echo "$bruteSubListFinal"| xargs -n 1 -P30 -I NEWIP sh -c " host 'NEWIP'" | awk '{print $4}' | grep '\.')"
-	elif  [ "$newIp" == n ] || [ newIp == no ]; then
-		echo "Newly discovered IPs will not be analyzed"
-	else 
-		echo "I did not understand"		
-		exit
-	fi
+	bruteSub=$(</tmp/generatedList)
+	bruteSubList="$(echo "$bruteSub" | xargs -n 1 -P30 -I LINK sh -c " host 'LINK' | grep "address" | grep '$target'")" 
+	bruteSubListFinal="$(echo "$bruteSubList" | awk '{print $1}' | sort | uniq )"
+	echo "$bruteSubListFinal"
+	read -p "Would you like to check for new IPs (of the servers that hosts the subdomains)? (y/n): " newIp
+		if [ -z "$newIp" ]; then
+			echo "I did not understand"	
+		elif [ "$newIp" == y ] || [ newIp == yes ]; then
+			newIp="$(echo "$bruteSubListFinal"| xargs -n 1 -P30 -I NEWIP sh -c " host 'NEWIP'" | awk '{print $4}' | grep '\.')"
+		elif  [ "$newIp" == n ] || [ newIp == no ]; then
+			echo "Newly discovered IPs will not be analyzed"
+		else 
+			echo "I did not understand"		
+			exit
+		fi
 
-echo "$newIp" | sort | uniq
+	echo "$newIp" | sort | uniq
+
+fi
 
 echo -e "\e[0;32m--------------Dictionary attack done-------------------\e[m"
 echo  -e "\e[1;94m---------------Results combined-------------------\e[m"
@@ -147,10 +156,11 @@ echo "choose what to analyze"
 echo " 1) target IP: $ip"
 echo " 2) set target IP manually "
 echo " 3) target IP RANGE: $range"
-echo " 4) target IPs discovered by subdomains:"
+echo " 4) no portscan needed, just launch dirb on the URLs"
+echo " 5) target IPs discovered by subdomains:"
 echo "$newIp" | sort | uniq
 
-read -p "what would you like to analyze (1,2,3 or 4)?: " targetIp
+read -p "what would you like to analyze (1,2,3,4 or 5)?: " targetIp
 if [ "$targetIp" == "1" ]; then
 	echo "analyzing $ip"
 
@@ -206,9 +216,9 @@ elif [ "$targetIp" == "3" ]; then
 	echo "$validIpPortList"
 
 elif [ "$targetIp" == "4" ]; then
+	echo "don't forget to scan the ports, you might find something interesting"
+elif [ "$targetIp" == "5" ]; then
 	echo "analyzing..."
-
-
 
 # target final range
 
